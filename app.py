@@ -498,6 +498,40 @@ with tab_hist:
             mime="text/csv",
             
         )
+    import matplotlib.pyplot as plt
+
+    def plotly_to_matplotlib(fig_plotly):
+        # Convertimos a JSON
+        fig_dict = fig_plotly.to_dict()
+    
+        plt_fig, ax = plt.subplots(figsize=(6,4))
+    
+        # For each trace in Plotly
+        for trace in fig_dict["data"]:
+            if trace["type"] == "bar":
+                ax.bar(
+                    trace["x"],
+                    trace["y"],
+                    label=trace.get("name", "")
+                )
+            elif trace["type"] == "scatter":
+                ax.plot(
+                    trace["x"],
+                    trace["y"],
+                    label=trace.get("name", "")
+                )
+    
+        # Títulos y ejes
+        layout = fig_dict.get("layout", {})
+        ax.set_title(layout.get("title", {}).get("text", ""))
+        ax.set_xlabel(layout.get("xaxis", {}).get("title", {}).get("text", ""))
+        ax.set_ylabel(layout.get("yaxis", {}).get("title", {}).get("text", ""))
+    
+        if "legend" in layout:
+            ax.legend()
+    
+        plt.tight_layout()
+        return plt_fig
 
         # ----- GENERAR PDF -----
         st.write("---")
@@ -527,6 +561,43 @@ with tab_hist:
                 fig_radar = st.session_state["fig_radar"]
                 fig_before_after = st.session_state["fig_before_after"]
                 info_tds = st.session_state["tds_info"]
+
+                import matplotlib.pyplot as plt
+
+                def plotly_to_matplotlib(fig_plotly):
+                    fig_dict = fig_plotly.to_dict()
+                
+                    plt_fig, ax = plt.subplots(figsize=(6,4))
+                
+                    # Procesar cada trace del Plotly figure
+                    for trace in fig_dict["data"]:
+                        if trace["type"] == "bar":
+                            ax.bar(
+                                trace["x"],
+                                trace["y"],
+                                label=trace.get("name", "")
+                            )
+                        elif trace["type"] == "scatter":
+                            ax.plot(
+                                trace["x"],
+                                trace["y"],
+                                label=trace.get("name", "")
+                            )
+                
+                    # Layout (título, ejes)
+                    layout = fig_dict.get("layout", {})
+                    if "title" in layout and "text" in layout["title"]:
+                        ax.set_title(layout["title"]["text"])
+                    if "xaxis" in layout and "title" in layout["xaxis"]:
+                        ax.set_xlabel(layout["xaxis"]["title"].get("text", ""))
+                    if "yaxis" in layout and "title" in layout["yaxis"]:
+                        ax.set_ylabel(layout["yaxis"]["title"].get("text", ""))
+                
+                    # Legend
+                    ax.legend()
+                
+                    plt.tight_layout()
+                    return plt_fig
 
                 def fig_to_image_reader(fig_local):
                     import plotly.io as pio
@@ -630,7 +701,12 @@ with tab_hist:
                     c.drawString(50, height - 50, "3. Gráficas del proceso de purificación")
                     c.setFillColor(colors.black)
 
-                    img_filtros = fig_to_image_reader(fig_filtros_local)
+                    fig_mat = plotly_to_matplotlib(fig_filtros_local)
+                    img_filtros = fig_to_image_reader(fig_mat)
+                    fig_mat2 = plotly_to_matplotlib(fig_before_after_local)
+                    img_before_after = fig_to_image_reader(fig_mat2)
+                    fig_mat3 = plotly_to_matplotlib(st.session_state["fig_tds"])
+                    img_tds = fig_to_image_reader(fig_mat3)
                     c.drawImage(img_filtros, 50, height - 360, width=500, height=250, preserveAspectRatio=True)
 
                     img_radar = fig_to_image_reader(fig_radar_local)
