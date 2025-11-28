@@ -533,7 +533,138 @@ with tab_hist:
         plt.tight_layout()
         return plt_fig
     
+    def fig_to_image_reader(fig_local):
+        buf = BytesIO()
     
+        # Si es figura de Matplotlib
+        if hasattr(fig_local, "savefig"):
+            fig_local.savefig(buf, format="png", dpi=120, bbox_inches="tight")
+            buf.seek(0)
+            return ImageReader(buf)
+    
+        # Si es Plotly
+        try:
+            import plotly.io as pio
+            img_bytes = pio.to_image(fig_local, format="png", engine="json")
+            buf.write(img_bytes)
+            buf.seek(0)
+            return ImageReader(buf)
+        except:
+            raise ValueError("Error convirtiendo figura Plotly a PNG")
+    
+    
+    def generar_pdf(
+        datos,
+        df_filtros_local,
+        fig_filtros_local,
+        fig_radar_local,
+        fig_before_after_local,
+        info_tds_local,
+    ):
+        buffer = BytesIO()
+        c = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+    
+        # ---------- TÍTULO ----------
+        c.setFillColor(colors.darkblue)
+        c.setFont("Helvetica-Bold", 18)
+        c.drawString(50, height - 50, "Reporte de Purificación de Agua – Ecatepec")
+        c.setFillColor(colors.black)
+    
+        # ---------- DATOS ----------
+        y = height - 90
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(50, y, "1. Datos del agua analizada")
+        y -= 20
+        c.setFont("Helvetica", 10)
+    
+        lineas = [
+            f"pH: {datos['pH']}",
+            f"Turbidez (NTU): {datos['Turbidez_NTU']}",
+            f"Coliformes (NMP/100ml): {datos['Coliformes_NMP_100ml']}",
+            f"Metales (ppm): {datos['Metales_ppm']}",
+            f"TDS (mg/L): {datos['TDS_mgL']}",
+            f"Olor desagradable: {datos['Olor']}",
+            f"Nivel de contaminación: {datos['Nivel_contaminacion_%']:.1f} %",
+        ]
+    
+        for linea in lineas:
+            c.drawString(60, y, linea)
+            y -= 14
+    
+        # ---------- TABLA FILTROS ----------
+        y -= 10
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(50, y, "2. Comparativa de filtros utilizados")
+        y -= 20
+    
+        # Encabezado
+        c.setFillColor(colors.darkblue)
+        c.rect(50, y - 15, 500, 18, fill=1)
+        c.setFillColor(colors.white)
+        c.drawString(55, y - 12, "Filtro")
+        c.drawString(220, y - 12, "Eficiencia (%)")
+        c.drawString(390, y - 12, "Purificación (%)")
+    
+        c.setFillColor(colors.black)
+        y -= 25
+        c.setFont("Helvetica", 9)
+    
+        for _, fila in df_filtros_local.iterrows():
+            if y < 120:
+                c.showPage()
+                y = height - 80
+            c.drawString(55, y, str(fila["Filtro"]))
+            c.drawString(220, y, f"{fila['Eficiencia base (%)']:.1f}")
+            c.drawString(390, y, f"{fila['Purificación estimada (%)']:.1f}")
+            y -= 14
+    
+        # ---------- GRÁFICAS ----------
+        c.showPage()
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(50, height - 50, "3. Gráficas de análisis")
+    
+        img_filtros = fig_to_image_reader(fig_filtros_local)
+        img_radar = fig_to_image_reader(fig_radar_local)
+        img_ba = fig_to_image_reader(fig_before_after_local)
+    
+        c.drawImage(img_filtros, 50, height - 350, width=500, height=250)
+        c.drawImage(img_radar, 150, 50, width=300, height=220)
+    
+        # ---------- BEFORE / AFTER ----------
+        c.showPage()
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(50, height - 50, "4. Comparativa antes/después del filtrado")
+        c.drawImage(img_ba, 50, 200, width=500, height=300)
+    
+        # ---------- TDS ----------
+        c.showPage()
+        c.setFont("Helvetica-Bold", 12)
+        c.drawString(50, height - 50, "5. Análisis especializado de TDS")
+    
+        y = height - 90
+        c.setFont("Helvetica", 10)
+    
+        tds_before = info_tds_local["tds_before"]
+        tds_after = info_tds_local["tds_after"]
+        reduccion = 100 * (1 - tds_after / tds_before)
+    
+        tds_lineas = [
+            f"TDS inicial: {tds_before:.2f} mg/L",
+            f"TDS tras filtrado: {tds_after:.2f} mg/L",
+            f"Reducción estimada: {reduccion:.1f} %",
+        ]
+    
+        for l in tds_lineas:
+            c.drawString(60, y, l)
+            y -= 16
+    
+        # ---------- FIN ----------
+        c.showPage()
+        c.save()
+        buffer.seek(0)
+        return buffer
+
     # ===============================
     #           GENERAR PDF
     # ===============================
@@ -584,4 +715,3 @@ with tab_hist:
                 file_name="reporte_purificacion_ecatepec_TDS.pdf",
                 mime="application/pdf",
             )
-
