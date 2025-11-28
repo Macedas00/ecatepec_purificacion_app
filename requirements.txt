@@ -1,8 +1,8 @@
-streamlit
+kaleido
+plotly
+matplotlib
 pandas
 numpy
-matplotlib
 reportlab
-plotly
 gspread
 oauth2client
