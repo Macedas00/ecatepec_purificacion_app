@@ -624,9 +624,17 @@ with tab_hist:
         c.setFont("Helvetica-Bold", 12)
         c.drawString(50, height - 50, "3. Gráficas de análisis")
     
-        img_filtros = fig_to_image_reader(fig_filtros_local)
+        # ----- Filtros -----
+        fig_filtros_mpl = plotly_to_matplotlib(fig_filtros_local)
+        img_filtros = fig_to_image_reader(fig_filtros_mpl)
+        
+        # ----- Radar (mpl) -----
         img_radar = fig_to_image_reader(fig_radar_local)
-        img_ba = fig_to_image_reader(fig_before_after_local)
+        
+        # ----- ANTES / DESPUES -----
+        fig_ba_mpl = plotly_to_matplotlib(fig_before_after_local)
+        img_ba = fig_to_image_reader(fig_ba_mpl)
+
     
         c.drawImage(img_filtros, 50, height - 350, width=500, height=250)
         c.drawImage(img_radar, 150, 50, width=300, height=220)
