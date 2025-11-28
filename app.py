@@ -6,6 +6,9 @@ import matplotlib.pyplot as plt
 from math import pi
 from io import BytesIO
 
+import plotly.express as px
+import plotly.graph_objects as go
+
 # ----- PDF (opcional con reportlab) -----
 try:
     from reportlab.lib.pagesizes import letter
@@ -17,25 +20,99 @@ try:
 except ImportError:
     REPORTLAB_AVAILABLE = False
 
-# ----- CONFIG PÁGINA -----
-st.set_page_config(
-    page_title="Purificación de Agua | Ecatepec",
-    page_icon="💧",
-    layout="wide",
-)
+# ----- Google Sheets (opcional) -----
+try:
+    import gspread
+    from oauth2client.service_account import ServiceAccountCredentials
+
+    GSPREAD_AVAILABLE = True
+except ImportError:
+    GSPREAD_AVAILABLE = False
+def log_to_google_sheets(row_dict):
+    """
+    Envía una fila con resultados a una hoja de cálculo de Google Sheets.
+    Requiere:
+    - Haber creado un Service Account en Google Cloud.
+    - Haber puesto el JSON del servicio en st.secrets["gcp_service_account"].
+    - Haber creado una hoja llamada 'Historial_Purificacion_Ecatepec' y
+      compartido con el correo del service account.
+    """
+    if not GSPREAD_AVAILABLE:
+        return
+
+    try:
+        scope = [
+            "https://spreadsheets.google.com/feeds",
+            "https://www.googleapis.com/auth/drive",
+        ]
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(
+            st.secrets["gcp_service_account"], scope
+        )
+        client = gspread.authorize(creds)
+
+        sh = client.open("Historial_Purificacion_Ecatepec")
+        ws = sh.sheet1
+
+        # Aseguramos orden de columnas
+        columnas = [
+            "pH",
+            "Turbidez_NTU",
+            "Coliformes_NMP_100ml",
+            "Metales_ppm",
+            "TDS_mgL",
+            "Olor",
+            "Nivel_contaminacion_%",
+            "Filtro_recomendado",
+            "Purificacion_recomendada_%",
+            "TDS_filtrado_mgL",
+        ]
+        fila = [row_dict.get(col, "") for col in columnas]
+        ws.append_row(fila)
+    except Exception:
+        # No tiramos la app, solo ignoramos si falla
+        pass
 
 # Fondo con estilo visual moderno (CSS)
 page_bg = """
 <style>
 [data-testid="stAppViewContainer"] {
-    background: linear-gradient(135deg, #003366 0%, #001a33 100%);
+    background: radial-gradient(circle at top left, #004080 0%, #001428 40%, #000814 100%);
     color: white;
 }
+
 [data-testid="stSidebar"] {
-    background-color: #001a33;
+    background: linear-gradient(180deg, #001a33 0%, #000814 100%);
 }
+
 .block-container {
     padding-top: 2rem;
+}
+
+/* Títulos con animación */
+h1, h2, h3 {
+    animation: fadeInDown 0.8s ease-out;
+}
+
+/* Tarjetas */
+.report-card {
+    background: rgba(0, 20, 40, 0.85);
+    border-radius: 16px;
+    padding: 18px 22px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(0, 120, 255, 0.15);
+}
+
+/* Botón grande landing */
+.big-button button {
+    font-size: 1.05rem !important;
+    padding: 0.6rem 1.4rem !important;
+    border-radius: 999px !important;
+}
+
+/* Animación fade */
+@keyframes fadeInDown {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 </style>
 """
@@ -65,6 +142,8 @@ if "fig_before_after" not in st.session_state:
     st.session_state["fig_before_after"] = None
 if "tds_info" not in st.session_state:
     st.session_state["tds_info"] = None
+if "started" not in st.session_state:
+    st.session_state["started"] = False
 
 # ----- SIDEBAR / FORMULARIO -----
 st.sidebar.header("📋 Formulario de Datos del Agua")
@@ -86,6 +165,47 @@ boton = st.sidebar.button("Iniciar Simulación")
 # Normalización simple de parámetros para un índice global
 score = (turbidez / 50 + coliformes / 2000 + metales / 2 + tds / 1000) / 4
 nivel = max(0.0, min(score * 100, 100.0))  # Nivel general de contaminación (0-100)
+
+# ----- LANDING PAGE -----
+if not st.session_state["started"]:
+    col_l, col_r = st.columns([2, 1])
+
+    with col_l:
+        st.markdown(
+            "<h1 style='font-size:2.4rem; margin-bottom:0;'>💧 IA para purificación de agua en Ecatepec</h1>",
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            "<p style='color:#cce6ff; font-size:1.05rem;'>Simulador interactivo que estima la eficiencia de filtros y nanofiltros "
+            "para mejorar la calidad del agua, con enfoque especial en sólidos disueltos totales (TDS).</p>",
+            unsafe_allow_html=True,
+        )
+        st.markdown("#### 🎯 ¿Qué hace este prototipo?")
+        st.markdown(
+            """
+            - Analiza parámetros clave: turbidez, coliformes, metales, TDS y olor.
+            - Compara filtros convencionales y nanotecnológicos.
+            - Estima la reducción de contaminantes antes y después del filtrado.
+            - Genera un **reporte PDF profesional** con tablas, gráficas e interpretación.
+            - Incluye un módulo específico para **TDS**, tu parte del proyecto.  
+            """
+        )
+
+        st.markdown('<div class="big-button">', unsafe_allow_html=True)
+        if st.button("🚀 Entrar al simulador"):
+            st.session_state["started"] = True
+            st.experimental_rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+
+    with col_r:
+        st.markdown('<div class="report-card">', unsafe_allow_html=True)
+        st.subheader("📊 Resumen rápido")
+        st.write("• Modelo pensado para el contexto de Ecatepec.")
+        st.write("• Soporta gráficas interactivas y reportes exportables.")
+        st.write("• Ideal para presentar en clase como prototipo funcional.")
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    st.stop()  # No sigue al resto del código hasta que presionen el botón
 
 # ----- TABS -----
 tab_analisis, tab_sim, tab_filtros, tab_tds, tab_hist = st.tabs(
@@ -209,17 +329,21 @@ with tab_filtros:
         "filtro": mejor["Filtro"],
     }
 
-    # ----- GRÁFICA DE BARRAS (FILTROS) -----
+    # ----- GRÁFICA DE BARRAS (FILTROS) - PLOTLY -----
     st.write("## 📈 Eficiencia y purificación estimada por filtro")
+    
+    df_plot = df.copy()
+    fig = px.bar(
+        df_plot,
+        x="Filtro",
+        y=["Eficiencia base (%)", "Purificación estimada (%)"],
+        barmode="group",
+        labels={"value": "Porcentaje (%)", "variable": "Métrica"},
+        title="Comparativa de filtros utilizados en México",
+    )
+    fig.update_layout(template="plotly_dark", legend_title_text="Métrica")
+    st.plotly_chart(fig, use_container_width=True)
 
-    fig, ax = plt.subplots(figsize=(10, 5))
-    ax.bar(df["Filtro"], df["Eficiencia base (%)"], alpha=0.7, label="Eficiencia base (%)")
-    ax.bar(df["Filtro"], df["Purificación estimada (%)"], alpha=0.7, label="Purificación estimada (%)")
-    ax.set_ylabel("Porcentaje (%)")
-    ax.set_title("Comparativa de filtros utilizados en México")
-    ax.legend()
-    plt.xticks(rotation=15)
-    st.pyplot(fig)
 
     # ----- RADAR CHART -----
     st.write("## 🧬 Perfil de contaminación del agua (Radar)")
@@ -253,15 +377,24 @@ with tab_filtros:
     x = np.arange(len(labels))
     width = 0.35
 
-    fig3, ax3 = plt.subplots(figsize=(10, 5))
-    ax3.bar(x - width / 2, before, width, label="Antes", color="#d9534f")
-    ax3.bar(x + width / 2, after, width, label="Después", color="#5cb85c")
-    ax3.set_xticks(x)
-    ax3.set_xticklabels(labels, rotation=15)
-    ax3.set_ylabel("Concentración")
-    ax3.set_title("Reducción de contaminantes tras el filtrado")
-    ax3.legend()
-    st.pyplot(fig3)
+    df_ba = pd.DataFrame(
+        {
+            "Parámetro": labels,
+            "Antes": before,
+            "Después": after,
+        }
+    )
+
+    fig3 = px.bar(
+        df_ba,
+        x="Parámetro",
+        y=["Antes", "Después"],
+        barmode="group",
+        title="Reducción de contaminantes tras el filtrado",
+    )
+    fig3.update_layout(template="plotly_dark", legend_title_text="Estado")
+    st.plotly_chart(fig3, use_container_width=True)
+
 
     # Guardar para el reporte
     st.session_state["df_filtros"] = df
@@ -271,20 +404,27 @@ with tab_filtros:
 
     # ----- GUARDAR EN HISTORIAL (cuando haya simulación) -----
     if boton:
-        st.session_state["historial"].append(
-            {
-                "pH": ph,
-                "Turbidez_NTU": turbidez,
-                "Coliformes_NMP_100ml": coliformes,
-                "Metales_ppm": metales,
-                "TDS_mgL": tds,
-                "Olor": olor,
-                "Nivel_contaminacion_%": nivel,
-                "Filtro_recomendado": mejor["Filtro"],
-                "Purificacion_recomendada_%": round(mejor["Purificación estimada (%)"], 1),
-                "TDS_filtrado_mgL": round(tds_after, 2),
-            }
-        )
+        entry = {
+            "pH": ph,
+            "Turbidez_NTU": turbidez,
+            "Coliformes_NMP_100ml": coliformes,
+            "Metales_ppm": metales,
+            "TDS_mgL": tds,
+            "Olor": olor,
+            "Nivel_contaminacion_%": nivel,
+            "Filtro_recomendado": mejor["Filtro"],
+            "Purificacion_recomendada_%": round(mejor["Purificación estimada (%)"], 1),
+            "TDS_filtrado_mgL": round(tds_after, 2),
+        }
+    
+        st.session_state["historial"].append(entry)
+    
+        # Si luego activas Google Sheets, con esto sube automáticamente
+        try:
+            log_to_google_sheets(entry)
+        except:
+            pass
+
 
 # ===========================
 # TAB 4: ENFOQUE TDS
@@ -322,14 +462,21 @@ with tab_tds:
     if info_tds is not None:
         st.write("---")
         st.write("### 📉 Gráfica de TDS antes y después del filtrado")
-        fig_tds, ax_tds = plt.subplots(figsize=(6, 4))
-        ax_tds.bar(["Antes", "Después"], [tds, info_tds["tds_after"]], color=["#d9534f", "#5cb85c"])
-        ax_tds.set_ylabel("TDS (mg/L)")
-        ax_tds.set_title("Cambio en TDS tras el filtrado")
-        st.pyplot(fig_tds)
-
-        # Opcional: guardar esta gráfica para usarla después si quieres
+        df_tds = pd.DataFrame(
+            {"Estado": ["Antes", "Después"], "TDS (mg/L)": [tds, info_tds["tds_after"]]}
+        )
+        fig_tds = px.bar(
+            df_tds,
+            x="Estado",
+            y="TDS (mg/L)",
+            title="Cambio en TDS tras el filtrado",
+            color="Estado",
+        )
+        fig_tds.update_layout(template="plotly_dark", showlegend=False)
+        st.plotly_chart(fig_tds, use_container_width=True)
+        
         st.session_state["fig_tds"] = fig_tds
+
 # ===========================
 # TAB 5: HISTORIAL Y REPORTES
 # ===========================
