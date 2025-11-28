@@ -532,11 +532,11 @@ with tab_hist:
     
         plt.tight_layout()
         return plt_fig
-
+        
         # ----- GENERAR PDF -----
         st.write("---")
         st.subheader("📄 Generar reporte PDF de la última simulación (con enfoque TDS)")
-
+        
         if not REPORTLAB_AVAILABLE:
             st.warning(
                 "Para generar el PDF instala la librería `reportlab` en tu entorno:\n\n"
@@ -561,212 +561,7 @@ with tab_hist:
                 fig_radar = st.session_state["fig_radar"]
                 fig_before_after = st.session_state["fig_before_after"]
                 info_tds = st.session_state["tds_info"]
-
-                import matplotlib.pyplot as plt
-
-                def plotly_to_matplotlib(fig_plotly):
-                    fig_dict = fig_plotly.to_dict()
-                
-                    plt_fig, ax = plt.subplots(figsize=(6,4))
-                
-                    # Procesar cada trace del Plotly figure
-                    for trace in fig_dict["data"]:
-                        if trace["type"] == "bar":
-                            ax.bar(
-                                trace["x"],
-                                trace["y"],
-                                label=trace.get("name", "")
-                            )
-                        elif trace["type"] == "scatter":
-                            ax.plot(
-                                trace["x"],
-                                trace["y"],
-                                label=trace.get("name", "")
-                            )
-                
-                    # Layout (título, ejes)
-                    layout = fig_dict.get("layout", {})
-                    if "title" in layout and "text" in layout["title"]:
-                        ax.set_title(layout["title"]["text"])
-                    if "xaxis" in layout and "title" in layout["xaxis"]:
-                        ax.set_xlabel(layout["xaxis"]["title"].get("text", ""))
-                    if "yaxis" in layout and "title" in layout["yaxis"]:
-                        ax.set_ylabel(layout["yaxis"]["title"].get("text", ""))
-                
-                    # Legend
-                    ax.legend()
-                
-                    plt.tight_layout()
-                    return plt_fig
-
-                def fig_to_image_reader(fig_local):
-                    import plotly.io as pio
-                    import base64
-                    from reportlab.lib.utils import ImageReader
-                    
-                    buf = BytesIO()
-                
-                    # Si es figura de Matplotlib
-                    if hasattr(fig_local, "savefig"):
-                        fig_local.savefig(buf, format="png", dpi=120, bbox_inches="tight")
-                        buf.seek(0)
-                        return ImageReader(buf)
-                
-                    # Si es figura de Plotly
-                    try:
-                        # Usa motor JSON interno de Plotly (sí funciona en Streamlit Cloud)
-                        img_bytes = pio.to_image(fig_local, format="png", engine="json")
-                        buf.write(img_bytes)
-                        buf.seek(0)
-                        return ImageReader(buf)
-                
-                    except Exception as e:
-                        raise ValueError(f"🔥 Error al convertir Plotly → PNG usando engine=json: {e}")
-
-                def generar_pdf(
-                    datos,
-                    df_filtros_local,
-                    fig_filtros_local,
-                    fig_radar_local,
-                    fig_before_after_local,
-                    info_tds_local,
-                ):
-                    buffer = BytesIO()
-                    c = canvas.Canvas(buffer, pagesize=letter)
-                    width, height = letter
-                
-                    # ----------- 1. TÍTULO -----------
-                    c.setFillColor(colors.darkblue)
-                    c.setFont("Helvetica-Bold", 18)
-                    c.drawString(50, height - 50, "Reporte de Purificación de Agua – Ecatepec")
-                    c.setFillColor(colors.black)
-                
-                    # ----------- 2. DATOS DEL AGUA -----------
-                    y = height - 90
-                    c.setFont("Helvetica-Bold", 12)
-                    c.drawString(50, y, "1. Datos del agua")
-                    y -= 20
-                    c.setFont("Helvetica", 10)
-                
-                    lineas = [
-                        f"pH: {datos['pH']}",
-                        f"Turbidez (NTU): {datos['Turbidez_NTU']}",
-                        f"Coliformes (NMP/100ml): {datos['Coliformes_NMP_100ml']}",
-                        f"Metales (ppm): {datos['Metales_ppm']}",
-                        f"TDS (mg/L): {datos['TDS_mgL']}",
-                        f"Olor desagradable: {datos['Olor']}",
-                        f"Nivel de contaminación: {datos['Nivel_contaminacion_%']:.1f} %",
-                    ]
-                    for linea in lineas:
-                        c.drawString(60, y, linea)
-                        y -= 14
-                
-                    # ----------- 3. TABLA DE FILTROS -----------
-                    y -= 10
-                    c.setFont("Helvetica-Bold", 12)
-                    c.drawString(50, y, "2. Comparativa de filtros utilizados en México")
-                    y -= 20
-                
-                    c.setFont("Helvetica-Bold", 10)
-                    c.setFillColor(colors.darkblue)
-                    c.rect(50, y - 15, 500, 18, fill=1, stroke=1)
-                    c.setFillColor(colors.white)
-                    c.drawString(55, y - 12, "Filtro")
-                    c.drawString(220, y - 12, "Eficiencia base (%)")
-                    c.drawString(390, y - 12, "Purificación estimada (%)")
-                
-                    y -= 25
-                    c.setFont("Helvetica", 9)
-                    c.setFillColor(colors.black)
-                
-                    for _, fila in df_filtros_local.iterrows():
-                        if y < 120:
-                            c.showPage()
-                            width, height = letter
-                            y = height - 80
-                        c.drawString(55, y, str(fila["Filtro"]))
-                        c.drawString(220, y, f"{fila['Eficiencia base (%)']:.1f}")
-                        c.drawString(390, y, f"{fila['Purificación estimada (%)']:.1f}")
-                        y -= 14
-                
-                    # ----------- 4. GRÁFICAS (CONVERSIÓN CORRECTA) -----------
-                    c.showPage()
-                
-                    c.setFont("Helvetica-Bold", 12)
-                    c.setFillColor(colors.darkblue)
-                    c.drawString(50, height - 50, "3. Gráficas del proceso de purificación")
-                    c.setFillColor(colors.black)
-                
-                    # Convertir Plotly → Matplotlib → PNG
-                    fig_mat = plotly_to_matplotlib(fig_filtros_local)
-                    img_filtros = fig_to_image_reader(fig_mat)
-                
-                    fig_mat2 = plotly_to_matplotlib(fig_before_after_local)
-                    img_before_after = fig_to_image_reader(fig_mat2)
-                
-                    fig_tds_plotly = st.session_state.get("fig_tds")
-                    img_tds = None
-                    if fig_tds_plotly:
-                        fig_mat3 = plotly_to_matplotlib(fig_tds_plotly)
-                        img_tds = fig_to_image_reader(fig_mat3)
-                
-                    # Radar (Matplotlib directo)
-                    img_radar = fig_to_image_reader(fig_radar_local)
-                
-                    # Insertar gráficas
-                    c.drawImage(img_filtros, 50, height - 360, width=500, height=250, preserveAspectRatio=True)
-                    c.drawImage(img_radar, 150, 80, width=300, height=220, preserveAspectRatio=True)
-                
-                    # ----------- 5. BEFORE–AFTER -----------
-                    c.showPage()
-                    c.setFont("Helvetica-Bold", 12)
-                    c.drawString(50, height - 50, "4. Reducción de contaminantes")
-                    c.drawImage(img_before_after, 50, height - 380, width=500, height=260, preserveAspectRatio=True)
-                
-                    # ----------- 6. TDS -----------
-                    if img_tds:
-                        c.drawImage(img_tds, 50, height - 650, width=500, height=260, preserveAspectRatio=True)
-                
-                    # ----------- 7. ANÁLISIS DE TDS -----------
-                    y = height - 420
-                    c.showPage()
-                    c.setFont("Helvetica-Bold", 12)
-                    c.drawString(50, height - 50, "5. Análisis especializado de TDS")
-                    y -= 20
-                    c.setFont("Helvetica", 10)
-                
-                    tds_before = info_tds_local["tds_before"]
-                    tds_after = info_tds_local["tds_after"]
-                    reduccion = 100 * (1 - tds_after / tds_before) if tds_before > 0 else 0
-                
-                    linea_tds = [
-                        f"TDS inicial: {tds_before:.2f} mg/L",
-                        f"TDS filtrado: {tds_after:.2f} mg/L",
-                        f"Reducción: {reduccion:.1f} %",
-                    ]
-                    for linea in linea_tds:
-                        c.drawString(60, y, linea)
-                        y -= 16
-                
-                    # ----------- 8. FILTRO RECOMENDADO -----------
-                    c.showPage()
-                    c.setFont("Helvetica-Bold", 12)
-                    c.drawString(50, height - 50, "6. Filtro recomendado")
-                    c.setFont("Helvetica", 11)
-                
-                    y = height - 90
-                    c.drawString(60, y, f"Filtro: {datos['Filtro_recomendado']}")
-                    y -= 20
-                    c.drawString(60, y, f"Purificación global: {datos['Purificacion_recomendada_%']:.1f} %")
-                    y -= 20
-                    c.drawString(60, y, f"TDS final: {datos['TDS_filtrado_mgL']:.2f} mg/L")
-                
-                    # ----------- FINAL -----------
-                    c.showPage()
-                    c.save()
-                    buffer.seek(0)
-                    return buffer
-
+        
                 pdf_buffer = generar_pdf(
                     ultima,
                     df_filtros,
@@ -775,7 +570,7 @@ with tab_hist:
                     fig_before_after,
                     info_tds,
                 )
-
+        
                 st.download_button(
                     label="⬇️ Descargar reporte PDF con tablas, gráficas y enfoque TDS",
                     data=pdf_buffer,
