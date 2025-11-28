@@ -3,3 +3,6 @@ pandas
 numpy
 matplotlib
 reportlab
+plotly
+gspread
+oauth2client
