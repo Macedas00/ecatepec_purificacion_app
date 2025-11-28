@@ -545,7 +545,7 @@ with tab_hist:
                         buf.seek(0)
                         return ImageReader(buf)
                     except Exception as e:
-                        raise ValueError(f"No se pudo convertir la figura al PDF: {e}")
+                        raise ValueError(f"No se pudo convertir la figura Plotly a imagen PNG: {e}")
 
                 def generar_pdf(
                     datos,
