@@ -501,27 +501,60 @@ with tab_hist:
     import matplotlib.pyplot as plt
 
     def plotly_to_matplotlib(fig_plotly):
-        # Convertimos a JSON
+        """
+        Convierte trazos de Plotly a un gráfico Matplotlib compatible
+        incluso cuando hay varias series, valores categóricos o estructuras
+        no estándar.
+        """
         fig_dict = fig_plotly.to_dict()
     
         plt_fig, ax = plt.subplots(figsize=(6,4))
     
-        # For each trace in Plotly
         for trace in fig_dict["data"]:
+    
+            x = trace.get("x", [])
+            y = trace.get("y", [])
+    
+            # --- Limpieza de valores ---
+            # Plotly usa a veces numpy, pandas o listas no estándar.
+            # Aquí convertimos TODO a listas nativas:
+            if hasattr(x, "tolist"):
+                x = x.tolist()
+            if hasattr(y, "tolist"):
+                y = y.tolist()
+    
+            # Si y es None o está vacío, saltamos este trace
+            if y is None or len(y) == 0:
+                continue
+    
+            # Si x es None o está vacío, generamos índices automáticos
+            if x is None or len(x) == 0:
+                x = list(range(len(y)))
+    
+            # Aseguramos conversiones numéricas cuando sea posible
+            try:
+                y = [float(v) for v in y]
+            except:
+                # Si NO se pueden convertir (categorías), saltamos
+                continue
+    
+            # ----- Gráfica tipo barra -----
             if trace["type"] == "bar":
                 ax.bar(
-                    trace["x"],
-                    trace["y"],
-                    label=trace.get("name", "")
-                )
-            elif trace["type"] == "scatter":
-                ax.plot(
-                    trace["x"],
-                    trace["y"],
-                    label=trace.get("name", "")
+                    x,
+                    y,
+                    label = trace.get("name", "")
                 )
     
-        # Títulos y ejes
+            # ----- Gráfica tipo línea -----
+            elif trace["type"] == "scatter":
+                ax.plot(
+                    x,
+                    y,
+                    label = trace.get("name", "")
+                )
+    
+        # ---- Títulos -----
         layout = fig_dict.get("layout", {})
         ax.set_title(layout.get("title", {}).get("text", ""))
         ax.set_xlabel(layout.get("xaxis", {}).get("title", {}).get("text", ""))
@@ -532,6 +565,7 @@ with tab_hist:
     
         plt.tight_layout()
         return plt_fig
+
     
     def fig_to_image_reader(fig_local):
         buf = BytesIO()
