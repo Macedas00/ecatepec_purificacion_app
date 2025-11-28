@@ -534,19 +534,20 @@ with tab_hist:
         return plt_fig
     
     
-    # ================================
+    # ===============================
     #           GENERAR PDF
-    # ================================
+    # ===============================
     st.write("---")
     st.subheader("📄 Generar reporte PDF de la última simulación (con enfoque TDS)")
     
-    if not REPORTLAB_AVAILABLE:
-        st.warning(
-            "Para generar el PDF instala la librería `reportlab` en tu entorno:\n\n"
-            "`pip install reportlab`"
-        )
-    
+    # 1) Si NO hay historial → no podemos generar PDF
+    if len(st.session_state["historial"]) == 0:
+        st.warning("Aún no puedes generar el PDF porque no hay simulaciones guardadas.")
     else:
+        # 2) Cargar historial
+        df_hist = pd.DataFrame(st.session_state["historial"])
+    
+        # 3) Validar que existan datos para todas las gráficas
         if (
             st.session_state["df_filtros"] is None
             or st.session_state["fig_filtros"] is None
@@ -560,7 +561,8 @@ with tab_hist:
             )
     
         else:
-            ultima = df_hist.iloc[-1]
+            # --- TODO OK, GENERAMOS EL PDF ---
+            ultima = df_hist.iloc[-1]   # AHORA df_hist sí existe
             df_filtros = st.session_state["df_filtros"]
             fig_filtros = st.session_state["fig_filtros"]
             fig_radar = st.session_state["fig_radar"]
@@ -582,3 +584,4 @@ with tab_hist:
                 file_name="reporte_purificacion_ecatepec_TDS.pdf",
                 mime="application/pdf",
             )
+
