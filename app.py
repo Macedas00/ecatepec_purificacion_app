@@ -529,6 +529,10 @@ with tab_hist:
                 info_tds = st.session_state["tds_info"]
 
                 def fig_to_image_reader(fig_local):
+                    import plotly.io as pio
+                    from PIL import Image
+                    import io
+                
                     buf = BytesIO()
                 
                     # Si es Matplotlib
@@ -537,15 +541,18 @@ with tab_hist:
                         buf.seek(0)
                         return ImageReader(buf)
                 
-                    # Si es Plotly
+                    # Si es Plotly → convertir a SVG primero
                     try:
-                        import plotly.io as pio
-                        img_bytes = pio.to_image(fig_local, format="png", scale=2)
-                        buf.write(img_bytes)
+                        svg_bytes = pio.to_image(fig_local, format="svg")
+                        svg_buf = io.BytesIO(svg_bytes)
+                        img = Image.open(svg_buf).convert("RGBA")
+                
+                        img.save(buf, format="PNG")
                         buf.seek(0)
                         return ImageReader(buf)
+                
                     except Exception as e:
-                        raise ValueError(f"No se pudo convertir la figura Plotly a imagen PNG: {e}")
+                        raise ValueError(f"Error convirtiendo gráfica Plotly a PNG sin Kaleido: {e}")
 
                 def generar_pdf(
                     datos,
