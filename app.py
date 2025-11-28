@@ -530,29 +530,27 @@ with tab_hist:
 
                 def fig_to_image_reader(fig_local):
                     import plotly.io as pio
-                    from PIL import Image
-                    import io
-                
+                    import base64
+                    from reportlab.lib.utils import ImageReader
+                    
                     buf = BytesIO()
                 
-                    # Si es Matplotlib
+                    # Si es figura de Matplotlib
                     if hasattr(fig_local, "savefig"):
                         fig_local.savefig(buf, format="png", dpi=120, bbox_inches="tight")
                         buf.seek(0)
                         return ImageReader(buf)
                 
-                    # Si es Plotly → convertir a SVG primero
+                    # Si es figura de Plotly
                     try:
-                        svg_bytes = pio.to_image(fig_local, format="svg")
-                        svg_buf = io.BytesIO(svg_bytes)
-                        img = Image.open(svg_buf).convert("RGBA")
-                
-                        img.save(buf, format="PNG")
+                        # Usa motor JSON interno de Plotly (sí funciona en Streamlit Cloud)
+                        img_bytes = pio.to_image(fig_local, format="png", engine="json")
+                        buf.write(img_bytes)
                         buf.seek(0)
                         return ImageReader(buf)
                 
                     except Exception as e:
-                        raise ValueError(f"Error convirtiendo gráfica Plotly a PNG sin Kaleido: {e}")
+                        raise ValueError(f"🔥 Error al convertir Plotly → PNG usando engine=json: {e}")
 
                 def generar_pdf(
                     datos,
