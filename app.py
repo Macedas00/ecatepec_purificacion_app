@@ -634,20 +634,20 @@ with tab_hist:
                     buffer = BytesIO()
                     c = canvas.Canvas(buffer, pagesize=letter)
                     width, height = letter
-
-                    # Título
+                
+                    # ----------- 1. TÍTULO -----------
                     c.setFillColor(colors.darkblue)
                     c.setFont("Helvetica-Bold", 18)
                     c.drawString(50, height - 50, "Reporte de Purificación de Agua – Ecatepec")
                     c.setFillColor(colors.black)
-
-                    # 1. Datos del agua
+                
+                    # ----------- 2. DATOS DEL AGUA -----------
                     y = height - 90
                     c.setFont("Helvetica-Bold", 12)
                     c.drawString(50, y, "1. Datos del agua")
                     y -= 20
                     c.setFont("Helvetica", 10)
-
+                
                     lineas = [
                         f"pH: {datos['pH']}",
                         f"Turbidez (NTU): {datos['Turbidez_NTU']}",
@@ -660,28 +660,25 @@ with tab_hist:
                     for linea in lineas:
                         c.drawString(60, y, linea)
                         y -= 14
-
-                    # 2. Comparativa de filtros
+                
+                    # ----------- 3. TABLA DE FILTROS -----------
                     y -= 10
                     c.setFont("Helvetica-Bold", 12)
                     c.drawString(50, y, "2. Comparativa de filtros utilizados en México")
                     y -= 20
-
+                
                     c.setFont("Helvetica-Bold", 10)
-                    c.setFillColor(colors.white)
-                    c.setStrokeColor(colors.darkblue)
-                    c.setLineWidth(0.5)
-
                     c.setFillColor(colors.darkblue)
                     c.rect(50, y - 15, 500, 18, fill=1, stroke=1)
                     c.setFillColor(colors.white)
                     c.drawString(55, y - 12, "Filtro")
                     c.drawString(220, y - 12, "Eficiencia base (%)")
                     c.drawString(390, y - 12, "Purificación estimada (%)")
-
+                
                     y -= 25
                     c.setFont("Helvetica", 9)
                     c.setFillColor(colors.black)
+                
                     for _, fila in df_filtros_local.iterrows():
                         if y < 120:
                             c.showPage()
@@ -691,91 +688,80 @@ with tab_hist:
                         c.drawString(220, y, f"{fila['Eficiencia base (%)']:.1f}")
                         c.drawString(390, y, f"{fila['Purificación estimada (%)']:.1f}")
                         y -= 14
-
-                    # 3. Gráficas generales
+                
+                    # ----------- 4. GRÁFICAS (CONVERSIÓN CORRECTA) -----------
                     c.showPage()
-                    width, height = letter
-
+                
                     c.setFont("Helvetica-Bold", 12)
                     c.setFillColor(colors.darkblue)
                     c.drawString(50, height - 50, "3. Gráficas del proceso de purificación")
                     c.setFillColor(colors.black)
-
+                
+                    # Convertir Plotly → Matplotlib → PNG
                     fig_mat = plotly_to_matplotlib(fig_filtros_local)
                     img_filtros = fig_to_image_reader(fig_mat)
+                
                     fig_mat2 = plotly_to_matplotlib(fig_before_after_local)
                     img_before_after = fig_to_image_reader(fig_mat2)
-                    fig_mat3 = plotly_to_matplotlib(st.session_state["fig_tds"])
-                    img_tds = fig_to_image_reader(fig_mat3)
-                    c.drawImage(img_filtros, 50, height - 360, width=500, height=250, preserveAspectRatio=True)
-
+                
+                    fig_tds_plotly = st.session_state.get("fig_tds")
+                    img_tds = None
+                    if fig_tds_plotly:
+                        fig_mat3 = plotly_to_matplotlib(fig_tds_plotly)
+                        img_tds = fig_to_image_reader(fig_mat3)
+                
+                    # Radar (Matplotlib directo)
                     img_radar = fig_to_image_reader(fig_radar_local)
+                
+                    # Insertar gráficas
+                    c.drawImage(img_filtros, 50, height - 360, width=500, height=250, preserveAspectRatio=True)
                     c.drawImage(img_radar, 150, 80, width=300, height=220, preserveAspectRatio=True)
-
-                    # 4. Reducción de contaminantes + TDS
+                
+                    # ----------- 5. BEFORE–AFTER -----------
                     c.showPage()
-                    width, height = letter
                     c.setFont("Helvetica-Bold", 12)
-                    c.setFillColor(colors.darkblue)
-                    c.drawString(50, height - 50, "4. Reducción de contaminantes antes y después del filtrado")
-                    c.setFillColor(colors.black)
-
-                    img_before_after = fig_to_image_reader(fig_before_after_local)
+                    c.drawString(50, height - 50, "4. Reducción de contaminantes")
                     c.drawImage(img_before_after, 50, height - 380, width=500, height=260, preserveAspectRatio=True)
-
-                    # 5. Análisis especializado de TDS
+                
+                    # ----------- 6. TDS -----------
+                    if img_tds:
+                        c.drawImage(img_tds, 50, height - 650, width=500, height=260, preserveAspectRatio=True)
+                
+                    # ----------- 7. ANÁLISIS DE TDS -----------
                     y = height - 420
+                    c.showPage()
                     c.setFont("Helvetica-Bold", 12)
-                    c.drawString(50, y, "5. Análisis especializado de TDS")
+                    c.drawString(50, height - 50, "5. Análisis especializado de TDS")
                     y -= 20
                     c.setFont("Helvetica", 10)
-
+                
                     tds_before = info_tds_local["tds_before"]
                     tds_after = info_tds_local["tds_after"]
                     reduccion = 100 * (1 - tds_after / tds_before) if tds_before > 0 else 0
-
-                    lineas_tds = [
+                
+                    linea_tds = [
                         f"TDS inicial: {tds_before:.2f} mg/L",
-                        f"TDS estimado después del filtrado: {tds_after:.2f} mg/L",
-                        f"Reducción aproximada de TDS: {reduccion:.1f} %",
-                        "",
-                        "Interpretación:",
+                        f"TDS filtrado: {tds_after:.2f} mg/L",
+                        f"Reducción: {reduccion:.1f} %",
                     ]
-
-                    if tds_before <= 500:
-                        lineas_tds.append(
-                            "- El agua ya cumple el valor guía de TDS de la NOM-127 (≤ 500 mg/L); el filtrado mejora aún más la calidad."
-                        )
-                    elif tds_before <= 900:
-                        lineas_tds.append(
-                            "- El TDS inicial indica alta mineralización; tras el filtrado se observa una mejora significativa."
-                        )
-                    else:
-                        lineas_tds.append(
-                            "- El TDS inicial es muy elevado; el filtrado reduce de forma importante la carga disuelta, "
-                            "pero se recomienda un tratamiento adicional para cumplir completamente la norma."
-                        )
-
-                    for linea in lineas_tds:
+                    for linea in linea_tds:
                         c.drawString(60, y, linea)
                         y -= 16
-
-                    # 6. Filtro recomendado
+                
+                    # ----------- 8. FILTRO RECOMENDADO -----------
                     c.showPage()
-                    width, height = letter
                     c.setFont("Helvetica-Bold", 12)
-                    c.setFillColor(colors.darkblue)
                     c.drawString(50, height - 50, "6. Filtro recomendado")
-                    c.setFillColor(colors.black)
-
                     c.setFont("Helvetica", 11)
+                
                     y = height - 90
-                    c.drawString(60, y, f"Filtro recomendado por la simulación: {datos['Filtro_recomendado']}")
+                    c.drawString(60, y, f"Filtro: {datos['Filtro_recomendado']}")
                     y -= 20
-                    c.drawString(60, y, f"Purificación estimada global: {datos['Purificacion_recomendada_%']:.1f} %")
+                    c.drawString(60, y, f"Purificación global: {datos['Purificacion_recomendada_%']:.1f} %")
                     y -= 20
-                    c.drawString(60, y, f"TDS estimado después del filtrado: {datos['TDS_filtrado_mgL']:.2f} mg/L")
-
+                    c.drawString(60, y, f"TDS final: {datos['TDS_filtrado_mgL']:.2f} mg/L")
+                
+                    # ----------- FINAL -----------
                     c.showPage()
                     c.save()
                     buffer.seek(0)
