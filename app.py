@@ -496,6 +496,7 @@ with tab_hist:
             data=csv_bytes,
             file_name="historial_purificacion_ecatepec.csv",
             mime="text/csv",
+            
         )
 
         # ----- GENERAR PDF -----
@@ -529,9 +530,22 @@ with tab_hist:
 
                 def fig_to_image_reader(fig_local):
                     buf = BytesIO()
-                    fig_local.savefig(buf, format="png", dpi=120, bbox_inches="tight")
-                    buf.seek(0)
-                    return ImageReader(buf)
+                
+                    # Si es Matplotlib
+                    if hasattr(fig_local, "savefig"):
+                        fig_local.savefig(buf, format="png", dpi=120, bbox_inches="tight")
+                        buf.seek(0)
+                        return ImageReader(buf)
+                
+                    # Si es Plotly
+                    try:
+                        import plotly.io as pio
+                        img_bytes = pio.to_image(fig_local, format="png", scale=2)
+                        buf.write(img_bytes)
+                        buf.seek(0)
+                        return ImageReader(buf)
+                    except Exception as e:
+                        raise ValueError(f"No se pudo convertir la figura al PDF: {e}")
 
                 def generar_pdf(
                     datos,
