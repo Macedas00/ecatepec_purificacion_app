@@ -532,48 +532,53 @@ with tab_hist:
     
         plt.tight_layout()
         return plt_fig
-        
-        # ----- GENERAR PDF -----
-        st.write("---")
-        st.subheader("📄 Generar reporte PDF de la última simulación (con enfoque TDS)")
-        
-        if not REPORTLAB_AVAILABLE:
+    
+    
+    # ================================
+    #           GENERAR PDF
+    # ================================
+    st.write("---")
+    st.subheader("📄 Generar reporte PDF de la última simulación (con enfoque TDS)")
+    
+    if not REPORTLAB_AVAILABLE:
+        st.warning(
+            "Para generar el PDF instala la librería `reportlab` en tu entorno:\n\n"
+            "`pip install reportlab`"
+        )
+    
+    else:
+        if (
+            st.session_state["df_filtros"] is None
+            or st.session_state["fig_filtros"] is None
+            or st.session_state["fig_radar"] is None
+            or st.session_state["fig_before_after"] is None
+            or st.session_state["tds_info"] is None
+        ):
             st.warning(
-                "Para generar el PDF instala la librería `reportlab` en tu entorno:\n\n"
-                "`pip install reportlab`"
+                "Aún no hay datos completos para el reporte (filtros, gráficas y TDS). "
+                "Ve a la pestaña **'Filtros y comparativa'** primero."
             )
+    
         else:
-            if (
-                st.session_state["df_filtros"] is None
-                or st.session_state["fig_filtros"] is None
-                or st.session_state["fig_radar"] is None
-                or st.session_state["fig_before_after"] is None
-                or st.session_state["tds_info"] is None
-            ):
-                st.warning(
-                    "Aún no hay datos completos para el reporte (filtros, gráficas y TDS). "
-                    "Ve a la pestaña **'Filtros y comparativa'** primero."
-                )
-            else:
-                ultima = df_hist.iloc[-1]
-                df_filtros = st.session_state["df_filtros"]
-                fig_filtros = st.session_state["fig_filtros"]
-                fig_radar = st.session_state["fig_radar"]
-                fig_before_after = st.session_state["fig_before_after"]
-                info_tds = st.session_state["tds_info"]
-        
-                pdf_buffer = generar_pdf(
-                    ultima,
-                    df_filtros,
-                    fig_filtros,
-                    fig_radar,
-                    fig_before_after,
-                    info_tds,
-                )
-        
-                st.download_button(
-                    label="⬇️ Descargar reporte PDF con tablas, gráficas y enfoque TDS",
-                    data=pdf_buffer,
-                    file_name="reporte_purificacion_ecatepec_TDS.pdf",
-                    mime="application/pdf",
-                )
+            ultima = df_hist.iloc[-1]
+            df_filtros = st.session_state["df_filtros"]
+            fig_filtros = st.session_state["fig_filtros"]
+            fig_radar = st.session_state["fig_radar"]
+            fig_before_after = st.session_state["fig_before_after"]
+            info_tds = st.session_state["tds_info"]
+    
+            pdf_buffer = generar_pdf(
+                ultima,
+                df_filtros,
+                fig_filtros,
+                fig_radar,
+                fig_before_after,
+                info_tds,
+            )
+    
+            st.download_button(
+                label="⬇️ Descargar reporte PDF con tablas, gráficas y enfoque TDS",
+                data=pdf_buffer,
+                file_name="reporte_purificacion_ecatepec_TDS.pdf",
+                mime="application/pdf",
+            )
