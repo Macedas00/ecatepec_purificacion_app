@@ -194,7 +194,7 @@ if not st.session_state["started"]:
         st.markdown('<div class="big-button">', unsafe_allow_html=True)
         if st.button("🚀 Entrar al simulador"):
             st.session_state["started"] = True
-            st.experimental_rerun()
+            st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col_r:
