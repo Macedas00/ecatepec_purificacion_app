@@ -331,6 +331,19 @@ with tab_sim:
         st.success("✅ Simulación completada.")
     else:
         st.info("Presiona **'Iniciar Simulación'** en la barra lateral para ejecutar el proceso paso a paso.")
+
+with tab_filtros:
+    st.subheader("🤖 Recomendación de IA para tu agua")
+
+    # Llamada al modelo de IA
+    filtro_ia = predecir_filtro(ph, turbidez, coliformes, metales, tds, olor)
+
+    st.success(f"👉 La IA recomienda usar: **{filtro_ia}**")
+
+    st.write("---")  # Separador visual
+    st.subheader("🧪 Comparativa de filtros utilizados en México")
+
+
 # ===========================
 # TAB 3: FILTROS Y COMPARATIVA
 # ===========================
