@@ -564,6 +564,66 @@ with tab_filtros:
         f"el principal riesgo residual es **{domina}**."
     )
 
+    # =========================================
+    #   CONCLUSIÓN AUTOMÁTICA DEL AGUA
+    # =========================================
+    st.write("---")
+    st.write("## 🧾 Conclusión final del análisis de calidad del agua")
+    
+    # Evaluación del riesgo final
+    if riesgo_global_after <= 10:
+        conclusion = """
+        🟢 **El agua presenta excelente calidad tras el proceso de filtrado.**
+        Puede considerarse apta para consumo humano directo siempre que se mantenga
+        un mantenimiento adecuado en el sistema de filtración.
+        """
+    elif riesgo_global_after <= 25:
+        conclusion = """
+        🟡 **El agua alcanza un nivel aceptable después del filtrado.**
+        Es adecuada para la mayoría de usos domésticos, aunque se recomienda
+        monitorear su calidad periódicamente.
+        """
+    elif riesgo_global_after <= 45:
+        conclusion = """
+        🟠 **El agua sigue teniendo un riesgo moderado.**
+        Aunque la filtración mejoró notablemente la calidad, se recomienda
+        un proceso adicional como carbón activado + UV o añadir ósmosis inversa.
+        """
+    else:
+        conclusion = """
+        🔴 **El agua continúa siendo de riesgo elevado incluso después del filtrado.**
+        No es recomendable para consumo humano. Se requiere tratamiento avanzado
+        (ósmosis inversa, nanofiltración o un sistema industrial).
+        """
+    
+    st.write(conclusion)
+    
+    # Comentario sobre el contaminante dominante
+    st.info(f"📌 **Contaminante crítico residual:** {domina}")
+    
+    # Recomendación final
+    if domina == "TDS":
+        st.write("""
+        💧 *Recomendación:* Se necesita un sistema que reduzca sales disueltas.  
+        → Ósmosis inversa o intercambio iónico son las mejores opciones.
+        """)
+    elif domina == "Metales":
+        st.write("""
+        ⚙️ *Recomendación:* Adsorción nanotecnológica (TiO₂, grafeno, carbón activado modificado).
+        Ideal para remover arsénico, plomo o aluminio.
+        """)
+    elif domina == "Coliformes":
+        st.write("""
+        🦠 *Recomendación:* Desinfección UV o luz UVC + posfiltrado.  
+        Los microorganismos siguen representando el mayor riesgo.
+        """)
+    elif domina == "Turbidez":
+        st.write("""
+        🌫️ *Recomendación:* Prefiltrado con zeolita o fibra sintética.  
+        La turbidez alta indica presencia de sedimentos y sólidos suspendidos.
+        """)
+
+    
     # ===== INTERPRETACIÓN AUTOMÁTICA DEL RADAR =====
     st.write("### 🧠 Interpretación del perfil de contaminación")
     
