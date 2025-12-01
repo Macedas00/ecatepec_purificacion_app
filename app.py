@@ -21,11 +21,13 @@ with open(ruta_modelo, "rb") as f:
 def predecir_filtro(ph, turbidez, coliformes, metales, tds, olor):
     # Convertir olor a número
     olor_num = 1 if olor == "Sí" else 0
-    
-    entrada = [[ph, turbidez, coliformes, metales, tds, olor_num]]
-    
+
+    # IMPORTANTE: solo los 5 features que conoce el modelo
+    entrada = [[turbidez, coliformes, metales, tds, olor_num]]
+
     prediccion = modelo_filtros.predict(entrada)[0]
     return prediccion
+
 
 # ----- PDF (opcional con reportlab) -----
 try:
