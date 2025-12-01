@@ -351,6 +351,46 @@ with tab_filtros:
         f"Purificación aproximada para tu caso: **{mejor['Purificación estimada (%)']:.1f} %**"
     )
 
+    # ===== INTERPRETACIÓN DEL FILTRO RECOMENDADO =====
+    st.write("### 🧠 ¿Por qué se recomienda este filtro?")
+    
+    filtro = mejor["Filtro"]
+    
+    if filtro == "Ósmosis inversa":
+        st.write("""
+        ✔ **La ósmosis inversa es el filtro más eficiente a nivel doméstico y municipal.**  
+        - Elimina hasta **99% de partículas**, metales y TDS.
+        - Es ideal cuando el agua tiene **altos niveles de salinidad, arsénico o metales pesados**.
+        - En Ecatepec se recomienda debido a la **dureza, sedimentos y TDS elevado**.
+        """)
+    elif filtro == "Carbón activado":
+        st.write("""
+        ✔ **Excelente para absorber olores, cloro y compuestos orgánicos volátiles (COVs).**  
+        - Ideal cuando el agua huele mal o tiene sabor desagradable.  
+        - No reduce mucho metales ni TDS.
+        """)
+    elif filtro == "Zeolita":
+        st.write("""
+        ✔ **La zeolita es un material natural que atrapa metales pesados y amonio.**  
+        - Útil para aguas con turbidez moderada y presencia de metales.
+        - Eficiente en sistemas municipales por su baja saturación.
+        """)
+    elif filtro == "Nano-fibras":
+        st.write("""
+        ✔ **Las nanofibras eliminan bacterias, virus y partículas submicrométricas.**  
+        - Muy utilizadas en investigación de potabilización.
+        - Logran altos niveles de remoción biológica sin químicos.
+        """)
+    elif filtro == "Ultrafiltración":
+        st.write("""
+        ✔ **La ultrafiltración retiene microorganismos y sólidos suspendidos.**  
+        - Ideal cuando hay **coliformes, turbidez y sedimentos**.
+        - Suele combinarse con carbón activado o UV.
+        """)
+    
+    st.info(f"📌 Este filtro se seleccionó porque obtuvo **{mejor['Purificación estimada (%)']:.1f}%** de purificación según tus parámetros.")
+
+    
     # ----- CÁLCULO ANTES / DESPUÉS (incluye TDS) -----
     eficiencia_filtro = mejor["Eficiencia base (%)"] / 100
 
