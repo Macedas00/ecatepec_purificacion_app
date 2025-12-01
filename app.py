@@ -9,6 +9,20 @@ from io import BytesIO
 import plotly.express as px
 import plotly.graph_objects as go
 
+import pickle
+# Cargar modelo entrenado
+with open("modelo_filtros.pkl", "rb") as f:
+    modelo_filtros = pickle.load(f)
+
+def predecir_filtro(ph, turbidez, coliformes, metales, tds, olor):
+    # Convertir olor a número
+    olor_num = 1 if olor == "Sí" else 0
+    
+    entrada = [[ph, turbidez, coliformes, metales, tds, olor_num]]
+    
+    prediccion = modelo_filtros.predict(entrada)[0]
+    return prediccion
+
 # ----- PDF (opcional con reportlab) -----
 try:
     from reportlab.lib.pagesizes import letter
@@ -20,7 +34,7 @@ try:
 except ImportError:
     REPORTLAB_AVAILABLE = False
 
-# ----- Google Sheets (opcional) -----
+# ----- Google Sheets -----
 try:
     import gspread
     from oauth2client.service_account import ServiceAccountCredentials
