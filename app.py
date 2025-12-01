@@ -390,21 +390,48 @@ with tab_filtros:
     
     st.info(f"📌 Este filtro se seleccionó porque obtuvo **{mejor['Purificación estimada (%)']:.1f}%** de purificación según tus parámetros.")
 
-    
-    # ----- CÁLCULO ANTES / DESPUÉS (incluye TDS) -----
-    eficiencia_filtro = mejor["Eficiencia base (%)"] / 100
-
-    turbidez_after = turbidez * (1 - eficiencia_filtro)
-    coliformes_after = coliformes * (1 - eficiencia_filtro)
-    metales_after = metales * (1 - eficiencia_filtro)
-    tds_after = tds * (1 - eficiencia_filtro)
-
-    st.session_state["tds_info"] = {
-        "tds_before": tds,
-        "tds_after": tds_after,
-        "eficiencia_filtro": eficiencia_filtro * 100,
-        "filtro": mejor["Filtro"],
+    # --- Eficiencias REALISTAS por filtro ---
+    eficiencias_reales = {
+        "Carbón activado": {
+            "turbidez": 0.40,
+            "coliformes": 0.10,
+            "metales": 0.25,
+            "tds": 0.05
+        },
+        "Ósmosis inversa": {
+            "turbidez": 0.95,
+            "coliformes": 0.99,
+            "metales": 0.98,
+            "tds": 0.95
+        },
+        "Zeolita": {
+            "turbidez": 0.70,
+            "coliformes": 0.20,
+            "metales": 0.80,
+            "tds": 0.20
+        },
+        "Nano-fibras": {
+            "turbidez": 0.65,
+            "coliformes": 0.40,
+            "metales": 0.90,
+            "tds": 0.25
+        },
+        "Ultrafiltración": {
+            "turbidez": 0.85,
+            "coliformes": 0.99,
+            "metales": 0.40,
+            "tds": 0.20
+        }
     }
+    
+    ef = eficiencias_reales[mejor["Filtro"]]
+    
+    # --- Cálculo con eficiencias específicas ---
+    turbidez_after = turbidez * (1 - ef["turbidez"])
+    coliformes_after = coliformes * (1 - ef["coliformes"])
+    metales_after = metales * (1 - ef["metales"])
+    tds_after = tds * (1 - ef["tds"])
+
 
     # ===== ANÁLISIS DE RIESGO ANTES / DESPUÉS =====
     st.write("### ⚠️ Análisis de riesgo del agua antes y después del filtrado")
