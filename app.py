@@ -432,11 +432,10 @@ with tab_filtros:
     metales_after = metales * (1 - ef["metales"])
     tds_after = tds * (1 - ef["tds"])
 
-
     # ===== ANÁLISIS DE RIESGO ANTES / DESPUÉS =====
     st.write("### ⚠️ Análisis de riesgo del agua antes y después del filtrado")
     
-    # Normalizamos los contaminantes a un índice 0–100 para comparar riesgo
+    # Normalizamos los contaminantes a un índice 0–100
     def normalizar(valor, maximo):
         return min(100, (valor / maximo) * 100)
     
@@ -453,46 +452,50 @@ with tab_filtros:
         "Metales": normalizar(metales_after, 2),
         "TDS": normalizar(tds_after, 1000),
     }
-
+    
+    # ========= NUEVO ORDEN CORRECTO — AQUÍ SE DEFINEN BEFORE Y AFTER =========
+    labels = ["Turbidez (NTU)", "Coliformes (NMP/100ml)", "Metales (ppm)", "TDS (mg/L)"]
+    before = [turbidez, coliformes, metales, tds]
+    after = [turbidez_after, coliformes_after, metales_after, tds_after]
+    
+    # =========================================
+    #   CÁLCULO DE MEJORA REAL (corregido)
+    # =========================================
+    parametros = ["Turbidez", "Coliformes", "Metales", "TDS"]
+    mejoras = {}
+    
+    for i, p in enumerate(parametros):
+        if before[i] > 0:
+            reduccion = 100 * (1 - after[i] / before[i])
+        else:
+            reduccion = 0
+        mejoras[p] = max(0, reduccion)
+    
+    # Contaminante dominante después del filtrado
+    domina = parametros[after.index(max(after))]
+    
+    # Mejora total del agua
+    if sum(before) > 0:
+        mejora_total = 100 * (1 - sum(after) / sum(before))
+    else:
+        mejora_total = 0
+    
+    # ===== INTERPRETACIÓN =====
     st.write("## 📝 Interpretación del análisis")
-
-    # Comentarios individuales
+    
     for p in parametros:
         st.write(f"• **{p}:** reducción aproximada de **{mejoras[p]:.1f}%**.")
     
-    # Contaminante que sigue siendo el mayor riesgo
     st.warning(f"👉 El contaminante con mayor riesgo residual es: **{domina}**.")
-    
-    # Índice total de mejora
     st.success(f"🔵 Mejora global estimada de la calidad del agua: **{mejora_total:.1f}%**.")
-
     
-    # Índice global (promedio)
+    # ===== INDICADORES GLOBALES =====
     riesgo_global_before = sum(riesgo_before.values()) / 4
     riesgo_global_after = sum(riesgo_after.values()) / 4
     
-    st.metric(
-        "📉 Reducción de riesgo total (%)",
-        f"{(100 - riesgo_global_after):.1f}%"
-    )
+    st.metric("📉 Reducción de riesgo total (%)", f"{(100 - riesgo_global_after):.1f}%")
     
-    # Interpretación automática
-    st.write("### 🧠 Interpretación del riesgo")
-    if riesgo_global_before >= 70:
-        st.write("🔴 El agua **inicialmente era de muy alto riesgo** para uso doméstico.")
-    elif riesgo_global_before >= 40:
-        st.write("🟠 El agua tenía **riesgo moderado** debido a niveles elevados de contaminantes.")
-    else:
-        st.write("🟡 El agua tenía **riesgo bajo**, aunque no estaba completamente dentro de normas sanitarias.")
-    
-    if riesgo_global_after <= 20:
-        st.success("🟢 Tras el filtrado, el agua muestra un **riesgo bajo**, adecuada para la mayoría de usos.")
-    elif riesgo_global_after <= 40:
-        st.info("🟡 Tras el filtrado, el agua quedó en un **rango aceptable**, aunque requiere monitoreo.")
-    else:
-        st.warning("🟠 A pesar del filtrado, el agua mantiene **riesgo considerable**. Se recomienda filtración adicional.")
-    
-    # ===== GRÁFICA DE PIE — Reducción porcentual =====
+    # ===== GRÁFICAS PIE =====
     st.write("### 🥧 Distribución del riesgo por contaminante")
     
     df_riesgo = pd.DataFrame({
@@ -501,25 +504,17 @@ with tab_filtros:
         "Después (%)": list(riesgo_after.values())
     })
     
-    fig_pie = px.pie(
-        df_riesgo,
-        names="Contaminante",
-        values="Antes (%)",
-        title="Riesgo relativo antes del filtrado",
-    )
+    fig_pie = px.pie(df_riesgo, names="Contaminante", values="Antes (%)",
+                     title="Riesgo relativo antes del filtrado")
     fig_pie.update_layout(template="plotly_dark")
     st.plotly_chart(fig_pie, use_container_width=True)
     
-    fig_pie2 = px.pie(
-        df_riesgo,
-        names="Contaminante",
-        values="Después (%)",
-        title="Riesgo relativo después del filtrado",
-    )
+    fig_pie2 = px.pie(df_riesgo, names="Contaminante", values="Después (%)",
+                      title="Riesgo relativo después del filtrado")
     fig_pie2.update_layout(template="plotly_dark")
     st.plotly_chart(fig_pie2, use_container_width=True)
     
-    # Guardamos estas gráficas para el PDF
+    # Guardar para PDF
     st.session_state["fig_pie_before"] = fig_pie
     st.session_state["fig_pie_after"] = fig_pie2
     st.session_state["riesgo_before"] = riesgo_before
