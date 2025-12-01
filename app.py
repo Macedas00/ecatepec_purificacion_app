@@ -19,10 +19,9 @@ with open(ruta_modelo, "rb") as f:
     modelo_filtros = pickle.load(f)
 
 def predecir_filtro(ph, turbidez, coliformes, metales, tds, olor):
-    # Convertir olor a número
     olor_num = 1 if olor == "Sí" else 0
-
-    # IMPORTANTE: solo los 5 features que conoce el modelo
+    
+    # Orden CORRECTO según dataset
     entrada = [[turbidez, coliformes, metales, tds, olor_num]]
 
     prediccion = modelo_filtros.predict(entrada)[0]
