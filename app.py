@@ -10,14 +10,13 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 import pickle
-# Cargar modelo entrenado
 import os
 
+# Cargar modelo entrenado con ruta absoluta
 ruta_modelo = os.path.join(os.path.dirname(__file__), "modelo_filtros.pkl")
 
 with open(ruta_modelo, "rb") as f:
     modelo_filtros = pickle.load(f)
-
 
 def predecir_filtro(ph, turbidez, coliformes, metales, tds, olor):
     # Convertir olor a número
