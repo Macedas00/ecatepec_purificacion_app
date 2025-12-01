@@ -7,4 +7,4 @@ numpy
 reportlab
 gspread
 oauth2client
-scikit-learn==1.5.2
+scikit-learn==1.3.0
