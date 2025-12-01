@@ -453,29 +453,6 @@ with tab_filtros:
         "Metales": normalizar(metales_after, 2),
         "TDS": normalizar(tds_after, 1000),
     }
-    
-    # =========================================
-    #   CÁLCULO DE MEJORA REAL (por contaminante)
-    # =========================================
-    mejoras = {}
-    
-    parametros = ["Turbidez", "Coliformes", "Metales", "TDS"]
-    
-    for i, p in enumerate(parametros):
-        if before[i] > 0:
-            reduccion = 100 * (1 - after[i] / before[i])
-        else:
-            reduccion = 0
-        mejoras[p] = max(0, reduccion)
-    
-    # Contaminante dominante después del filtrado
-    domina = parametros[after.index(max(after))]
-    
-    # Índice total de mejora del agua
-    if sum(before) > 0:
-        mejora_total = 100 * (1 - sum(after) / sum(before))
-    else:
-        mejora_total = 0
 
     st.write("## 📝 Interpretación del análisis")
 
@@ -643,6 +620,30 @@ with tab_filtros:
     before = [turbidez, coliformes, metales, tds]
     after = [turbidez_after, coliformes_after, metales_after, tds_after]
 
+    # =========================================
+    #   CÁLCULO DE MEJORA REAL (por contaminante)
+    # =========================================
+    mejoras = {}
+    
+    parametros = ["Turbidez", "Coliformes", "Metales", "TDS"]
+    
+    for i, p in enumerate(parametros):
+        if before[i] > 0:
+            reduccion = 100 * (1 - after[i] / before[i])
+        else:
+            reduccion = 0
+        mejoras[p] = max(0, reduccion)
+    
+    # Contaminante dominante después del filtrado
+    domina = parametros[after.index(max(after))]
+    
+    # Índice total de mejora del agua
+    if sum(before) > 0:
+        mejora_total = 100 * (1 - sum(after) / sum(before))
+    else:
+        mejora_total = 0
+
+    
     x = np.arange(len(labels))
     width = 0.35
 
