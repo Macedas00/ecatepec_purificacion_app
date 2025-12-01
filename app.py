@@ -1009,29 +1009,30 @@ with tab_hist:
         c.drawString(50, height - 50, "4. Comparativa antes/después del filtrado")
         c.drawImage(img_ba, 50, 200, width=500, height=300)
     
-        # ---------- TDS ----------
+       # ---------- TDS ----------
         c.showPage()
         c.setFont("Helvetica-Bold", 12)
         c.drawString(50, height - 50, "5. Análisis especializado de TDS")
-    
+
         y = height - 90
         c.setFont("Helvetica", 10)
-    
+
         tds_before = info_tds_local["tds_before"]
         tds_after = info_tds_local["tds_after"]
         reduccion = 100 * (1 - tds_after / tds_before)
-    
+
         tds_lineas = [
             f"TDS inicial: {tds_before:.2f} mg/L",
             f"TDS tras filtrado: {tds_after:.2f} mg/L",
             f"Reducción estimada: {reduccion:.1f} %",
         ]
-    
+
         for l in tds_lineas:
             c.drawString(60, y, l)
             y -= 16
 
-     # ---------- CONCLUSIÓN FINAL ----------
+
+        # ---------- CONCLUSIÓN FINAL ----------
         c.showPage()
         c.setFont("Helvetica-Bold", 12)
         c.drawString(50, height - 50, "6. Conclusión final del análisis")
@@ -1056,23 +1057,26 @@ with tab_hist:
         if riesgo_global_after <= 10:
             conclusion_text = (
                 "El agua presenta excelente calidad tras el proceso de filtrado.\n"
-                "Puede considerarse apta para consumo humano directo, siempre que se mantenga\n"
-                "el sistema de filtración en buen estado."
+                "Puede considerarse apta para consumo humano directo.\n"
+                "Se recomienda mantener el sistema de filtración en buen estado."
             )
         elif riesgo_global_after <= 25:
             conclusion_text = (
                 "El agua alcanza un nivel aceptable después del filtrado.\n"
-                "Es adecuada para la mayoría de usos domésticos."
+                "Adecuada para la mayoría de usos domésticos.\n"
+                "Aun así se aconseja monitoreo periódico."
             )
         elif riesgo_global_after <= 45:
             conclusion_text = (
                 "El agua mantiene un riesgo moderado tras el filtrado.\n"
-                "Se recomienda tratamiento adicional como ósmosis inversa o luz UV."
+                "Se recomienda aplicar tratamientos adicionales como ósmosis inversa\n"
+                "o desinfección UV."
             )
         else:
             conclusion_text = (
                 "El agua continúa con un riesgo elevado incluso después del filtrado.\n"
-                "No se recomienda para consumo humano sin tratamiento avanzado."
+                "No se recomienda para consumo humano.\n"
+                "Se requiere tratamiento avanzado (ósmosis inversa o nanofiltración)."
             )
 
         # Escribir texto línea por línea
@@ -1094,7 +1098,7 @@ with tab_hist:
         c.drawString(60, y, f"Contaminante residual dominante: {dominante}")
         y -= 20
 
-        # Recomendación específica
+        # Recomendación específica por contaminante
         recomendaciones = {
             "TDS": "Se recomienda ósmosis inversa o intercambio iónico.",
             "Metales": "Se recomienda nanofiltración o adsorción nanotecnológica.",
@@ -1106,12 +1110,12 @@ with tab_hist:
         c.setFont("Helvetica", 10)
         c.drawString(60, y, f"Recomendación final: {recomendacion}")
 
-
         # ---------- FIN ----------
         c.showPage()
         c.save()
         buffer.seek(0)
         return buffer
+
 
     # ===============================
     #           GENERAR PDF
