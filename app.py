@@ -1025,7 +1025,92 @@ with tab_hist:
         for l in tds_lineas:
             c.drawString(60, y, l)
             y -= 16
-    
+
+                # ---------- CONCLUSIÓN FINAL ----------
+                c.showPage()
+                c.setFont("Helvetica-Bold", 12)
+                c.drawString(50, height - 50, "6. Conclusión final del análisis")
+        
+                y = height - 90
+                c.setFont("Helvetica", 10)
+        
+                # Interpretación del riesgo global
+                riesgo_final = info_tds_local["tds_after"]  # No se usa directamente, pero se deja referencia
+        
+                # Usamos el riesgo_after y riesgo_before que guardaste fuera
+                # (los recibiremos desde st.session_state para usar aquí)
+                try:
+                    riesgo_before_local = st.session_state["riesgo_before"]
+                    riesgo_after_local = st.session_state["riesgo_after"]
+                except:
+                    riesgo_before_local = {}
+                    riesgo_after_local = {}
+        
+                # Cálculo del riesgo global final
+                if len(riesgo_after_local) > 0:
+                    riesgo_global_after = sum(riesgo_after_local.values()) / 4
+                else:
+                    riesgo_global_after = 0
+        
+                # Selección de texto según riesgo final
+                if riesgo_global_after <= 10:
+                    conclusion_text = (
+                        "El agua presenta excelente calidad tras el proceso de filtrado.\n"
+                        "Puede considerarse apta para consumo humano directo, siempre y cuando se realice\n"
+                        "el mantenimiento adecuado del sistema de filtración."
+                    )
+                elif riesgo_global_after <= 25:
+                    conclusion_text = (
+                        "El agua alcanza un nivel aceptable después del filtrado.\n"
+                        "Es adecuada para la mayoría de usos domésticos, aunque se recomienda monitoreo periódico."
+                    )
+                elif riesgo_global_after <= 45:
+                    conclusion_text = (
+                        "El agua mantiene un riesgo moderado tras el filtrado.\n"
+                        "Se recomienda aplicar un tratamiento adicional como ósmosis inversa o luz UV."
+                    )
+                else:
+                    conclusion_text = (
+                        "El agua continúa siendo de riesgo elevado incluso después del filtrado.\n"
+                        "No se recomienda para consumo humano. Se requiere tratamiento avanzado."
+                    )
+        
+                # Escribir conclusión en PDF
+                for linea in conclusion_text.split("\n"):
+                    c.drawString(60, y, linea)
+                    y -= 16
+                    if y < 100:
+                        c.showPage()
+                        y = height - 80
+        
+                # Indicar contaminante dominante
+                try:
+                    domina_local = st.session_state["riesgo_after"]
+                    if len(domina_local) > 0:
+                        dominante = max(riesgo_after_local, key=riesgo_after_local.get)
+                    else:
+                        dominante = "—"
+                except:
+                    dominante = "—"
+        
+                y -= 10
+                c.setFont("Helvetica-Bold", 10)
+                c.drawString(60, y, f"Contaminante residual dominante: {dominante}")
+                y -= 20
+        
+                # Recomendación específica según contaminante
+                recomendaciones_texto = {
+                    "TDS": "Se recomienda ósmosis inversa o resinas de intercambio iónico.",
+                    "Metales": "Se recomienda adsorción nanotecnológica (grafeno, TiO₂) o carbón activado modificado.",
+                    "Coliformes": "Se recomienda desinfección UV o luz UVC.",
+                    "Turbidez": "Se recomienda prefiltración con zeolita o sedimentos.",
+                }
+        
+                recomendacion = recomendaciones_texto.get(dominante, "No se pudo determinar una recomendación específica.")
+        
+                c.setFont("Helvetica", 10)
+                c.drawString(60, y, f"Recomendación final: {recomendacion}")
+
         # ---------- FIN ----------
         c.showPage()
         c.save()
