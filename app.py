@@ -432,6 +432,13 @@ with tab_filtros:
     metales_after = metales * (1 - ef["metales"])
     tds_after = tds * (1 - ef["tds"])
 
+    # Guardar info de TDS para el PDF
+    st.session_state["tds_info"] = {
+        "tds_before": tds,
+        "tds_after": tds_after,
+        "filtro": mejor["Filtro"]
+    }
+
     # ===== ANÁLISIS DE RIESGO ANTES / DESPUÉS =====
     st.write("### ⚠️ Análisis de riesgo del agua antes y después del filtrado")
     
