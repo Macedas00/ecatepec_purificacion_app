@@ -454,6 +454,42 @@ with tab_filtros:
         "TDS": normalizar(tds_after, 1000),
     }
     
+    # =========================================
+    #   CÁLCULO DE MEJORA REAL (por contaminante)
+    # =========================================
+    mejoras = {}
+    
+    parametros = ["Turbidez", "Coliformes", "Metales", "TDS"]
+    
+    for i, p in enumerate(parametros):
+        if before[i] > 0:
+            reduccion = 100 * (1 - after[i] / before[i])
+        else:
+            reduccion = 0
+        mejoras[p] = max(0, reduccion)
+    
+    # Contaminante dominante después del filtrado
+    domina = parametros[after.index(max(after))]
+    
+    # Índice total de mejora del agua
+    if sum(before) > 0:
+        mejora_total = 100 * (1 - sum(after) / sum(before))
+    else:
+        mejora_total = 0
+
+    st.write("## 📝 Interpretación del análisis")
+
+    # Comentarios individuales
+    for p in parametros:
+        st.write(f"• **{p}:** reducción aproximada de **{mejoras[p]:.1f}%**.")
+    
+    # Contaminante que sigue siendo el mayor riesgo
+    st.warning(f"👉 El contaminante con mayor riesgo residual es: **{domina}**.")
+    
+    # Índice total de mejora
+    st.success(f"🔵 Mejora global estimada de la calidad del agua: **{mejora_total:.1f}%**.")
+
+    
     # Índice global (promedio)
     riesgo_global_before = sum(riesgo_before.values()) / 4
     riesgo_global_after = sum(riesgo_after.values()) / 4
@@ -550,6 +586,11 @@ with tab_filtros:
     ax2.plot(angles, valores_before, linewidth=2)
     ax2.fill(angles, valores_before, alpha=0.3)
     st.pyplot(fig2)
+    st.info(
+        f"El radar muestra que antes del filtrado el parámetro dominante era "
+        f"**{parametros[before.index(max(before))]}**, mientras que después del filtrado "
+        f"el principal riesgo residual es **{domina}**."
+    )
 
     # ===== INTERPRETACIÓN AUTOMÁTICA DEL RADAR =====
     st.write("### 🧠 Interpretación del perfil de contaminación")
