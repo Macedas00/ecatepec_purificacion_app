@@ -246,6 +246,43 @@ with tab_analisis:
         "Este análisis es una aproximación basada en los parámetros ingresados. "
         "Valores altos indican mayor riesgo para la salud."
     )
+    
+    st.write("### 🧠 Interpretación experta de parámetros")
+
+    # Interpretación de turbidez
+    if turbidez < 1:
+        st.success("✔ La turbidez es excelente. El agua está visualmente limpia y permite una desinfección UV altamente eficiente.")
+    elif turbidez < 5:
+        st.info("ℹ La turbidez es aceptable, pero puede interferir ligeramente con la desinfección UV si aumenta.")
+    else:
+        st.error("⚠️ La turbidez es alta. Refleja presencia de partículas suspendidas, arcillas o microorganismos. Se recomienda prefiltración inmediata.")
+    
+    # Interpretación coliformes
+    if coliformes == 0:
+        st.success("✔ No hay coliformes fecales. El agua no presenta contaminación biológica detectable.")
+    elif coliformes < 200:
+        st.warning("⚠️ Hay baja presencia de coliformes fecales. Requiere desinfección UV para garantizar potabilidad.")
+    else:
+        st.error("❌ Alto nivel de coliformes. El agua NO es apta para consumo sin un tratamiento intensivo (UV obligatorio).")
+    
+    # Interpretación metales
+    if metales < 0.01:
+        st.success("✔ Metales pesados dentro de los límites recomendados por la NOM-127.")
+    elif metales < 0.05:
+        st.warning("⚠️ Metales moderados. Es recomendable nanofiltración o adsorción nanotecnológica.")
+    else:
+        st.error("❌ Metales pesados elevados. El agua puede contener arsénico, plomo u otros contaminantes peligrosos.")
+    
+    # Interpretación TDS
+    if tds < 300:
+        st.success("✔ Excelente calidad mineral del agua (TDS bajo).")
+    elif tds < 600:
+        st.info("ℹ Buena calidad del agua. Puede tener sabores minerales leves.")
+    elif tds < 900:
+        st.warning("⚠️ TDS alto. El agua puede tener sabor salado o amargo. No es ideal para consumo frecuente.")
+    else:
+        st.error("❌ TDS muy alto. El agua NO es apta para consumo humano directo.")
+
 
 # ===========================
 # TAB 2: SIMULACIÓN
