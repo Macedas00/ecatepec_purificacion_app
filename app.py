@@ -827,59 +827,54 @@ with tab_hist:
 
     def plotly_to_matplotlib(fig_plotly):
         """
-        Convierte trazos de Plotly a un gráfico Matplotlib compatible
-        incluso cuando hay varias series, valores categóricos o estructuras
-        no estándar.
+        Convierte figuras Plotly a Matplotlib sin perder datos.
+        Corrige el problema de las categorías en eje X (strings),
+        que causaba que los gráficos salieran vacíos en el PDF.
         """
         fig_dict = fig_plotly.to_dict()
-    
-        plt_fig, ax = plt.subplots(figsize=(6,4))
+        plt_fig, ax = plt.subplots(figsize=(6, 4))
     
         for trace in fig_dict["data"]:
-    
             x = trace.get("x", [])
             y = trace.get("y", [])
     
-            # --- Limpieza de valores ---
-            # Plotly usa a veces numpy, pandas o listas no estándar.
-            # Aquí convertimos TODO a listas nativas:
+            # Convertir a listas estándar
             if hasattr(x, "tolist"):
                 x = x.tolist()
             if hasattr(y, "tolist"):
                 y = y.tolist()
     
-            # Si y es None o está vacío, saltamos este trace
             if y is None or len(y) == 0:
                 continue
     
-            # Si x es None o está vacío, generamos índices automáticos
-            if x is None or len(x) == 0:
-                x = list(range(len(y)))
+            # 📌 SI X ES TEXTO (categorías), convertirlo a índices numéricos
+            if len(x) > 0 and isinstance(x[0], str):
+                x_ticks = x
+                x = list(range(len(x_ticks)))
+                usar_xticks = True
+            else:
+                usar_xticks = False
     
-            # Aseguramos conversiones numéricas cuando sea posible
+            # Convertir Y a floats
             try:
-                y = [float(v) for v in y]
+                y = [float(val) for val in y]
             except:
-                # Si NO se pueden convertir (categorías), saltamos
                 continue
     
-            # ----- Gráfica tipo barra -----
+            # Dibujar barra
             if trace["type"] == "bar":
-                ax.bar(
-                    x,
-                    y,
-                    label = trace.get("name", "")
-                )
+                ax.bar(x, y, label=trace.get("name", ""))
     
-            # ----- Gráfica tipo línea -----
+            # Dibujar líneas
             elif trace["type"] == "scatter":
-                ax.plot(
-                    x,
-                    y,
-                    label = trace.get("name", "")
-                )
+                ax.plot(x, y, label=trace.get("name", ""))
     
-        # ---- Títulos -----
+            # Colocar etiquetas de categorías si aplica
+            if usar_xticks:
+                ax.set_xticks(x)
+                ax.set_xticklabels(x_ticks, rotation=45, ha="right")
+    
+        # Títulos
         layout = fig_dict.get("layout", {})
         ax.set_title(layout.get("title", {}).get("text", ""))
         ax.set_xlabel(layout.get("xaxis", {}).get("title", {}).get("text", ""))
@@ -890,6 +885,7 @@ with tab_hist:
     
         plt.tight_layout()
         return plt_fig
+
 
     
     def fig_to_image_reader(fig_local):
