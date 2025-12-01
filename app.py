@@ -404,6 +404,50 @@ with tab_filtros:
     ax2.fill(angles, valores_before, alpha=0.3)
     st.pyplot(fig2)
 
+    # ===== INTERPRETACIÓN AUTOMÁTICA DEL RADAR =====
+    st.write("### 🧠 Interpretación del perfil de contaminación")
+    
+    interpretaciones = []
+    
+    # Turbidez
+    if turbidez < 1:
+        interpretaciones.append("✔ La turbidez es muy baja. El agua está visualmente clara.")
+    elif turbidez < 5:
+        interpretaciones.append("ℹ La turbidez es moderada y podría afectar ligeramente la desinfección UV.")
+    else:
+        interpretaciones.append("⚠️ Alta turbidez. Refleja partículas, sedimentos o microorganismos.")
+    
+    # Coliformes
+    if coliformes == 0:
+        interpretaciones.append("✔ No se detectan coliformes fecales.")
+    elif coliformes < 200:
+        interpretaciones.append("⚠️ Hay presencia leve de coliformes. Se recomienda desinfección UV.")
+    else:
+        interpretaciones.append("❌ Coliformes muy altos. El agua NO es potable sin tratamiento intensivo.")
+    
+    # Metales
+    if metales < 0.01:
+        interpretaciones.append("✔ Metales pesados dentro de límites seguros según NOM-127.")
+    elif metales < 0.05:
+        interpretaciones.append("⚠️ Metales moderados. Sugiere riesgo bajo pero requiere monitoreo.")
+    else:
+        interpretaciones.append("❌ Metales peligrosamente elevados. Podría incluir plomo o arsénico.")
+    
+    # TDS
+    if tds < 300:
+        interpretaciones.append("✔ TDS muy bajo. Agua con excelente calidad mineral.")
+    elif tds < 600:
+        interpretaciones.append("ℹ TDS moderado. Sabor mineral aceptable.")
+    elif tds < 900:
+        interpretaciones.append("⚠️ TDS elevado. Sabor salado o amargo probable.")
+    else:
+        interpretaciones.append("❌ TDS extremadamente alto. Agua NO apta para consumo.")
+    
+    # Mostrar interpretación
+    for item in interpretaciones:
+        st.write(item)
+
+    
     # ----- GRÁFICA ANTES vs DESPUÉS -----
     st.write("## 🔄 Comparativa de contaminantes antes y después del filtrado")
 
