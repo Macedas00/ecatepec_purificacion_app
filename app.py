@@ -13,7 +13,7 @@ import pickle
 import os
 
 # Cargar modelo entrenado con ruta absoluta
-ruta_modelo = os.path.join(os.path.dirname(__file__), "modelo_filtros.pkl.txt")
+ruta_modelo = os.path.join(os.path.dirname(__file__), "modelo_filtros.pkl")
 
 with open(ruta_modelo, "rb") as f:
     modelo_filtros = pickle.load(f)
