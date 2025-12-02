@@ -9,25 +9,6 @@ from io import BytesIO
 import plotly.express as px
 import plotly.graph_objects as go
 
-import pickle
-import os
-
-# Cargar modelo entrenado con ruta absoluta
-ruta_modelo = os.path.join(os.path.dirname(__file__), "modelo_filtros.pkl")
-
-with open(ruta_modelo, "rb") as f:
-    modelo_filtros = pickle.load(f)
-
-def predecir_filtro(ph, turbidez, coliformes, metales, tds, olor):
-    olor_num = 1 if olor == "Sí" else 0
-    
-    # Orden CORRECTO según dataset
-    entrada = [[turbidez, coliformes, metales, tds, olor_num]]
-
-    prediccion = modelo_filtros.predict(entrada)[0]
-    return prediccion
-
-
 # ----- PDF (opcional con reportlab) -----
 try:
     from reportlab.lib.pagesizes import letter
@@ -336,17 +317,6 @@ with tab_sim:
         st.success("✅ Simulación completada.")
     else:
         st.info("Presiona **'Iniciar Simulación'** en la barra lateral para ejecutar el proceso paso a paso.")
-
-with tab_filtros:
-    st.subheader("🤖 Recomendación de IA para tu agua")
-
-    # Llamada al modelo de IA
-    filtro_ia = predecir_filtro(ph, turbidez, coliformes, metales, tds, olor)
-
-    st.success(f"👉 La IA recomienda usar: **{filtro_ia}**")
-
-    st.write("---")  # Separador visual
-    st.subheader("🧪 Comparativa de filtros utilizados en México")
 
 
 # ===========================
